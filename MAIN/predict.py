@@ -7,7 +7,7 @@ MAIN EXECUTABLE. Run this file directly from any terminal or IDE:
 
 It will interactively ask you for the path to a telemetry CSV file,
 analyze it using the trained Random Forest model, print a risk summary
-to the terminal, and save 4 visualization charts to the outputs/ folder.
+to the terminal, and save 4 visualization charts to the Sample_Output/ folder.
 
 If no trained model is found in models/, it will automatically train one
 first using the bundled synthetic dataset.
@@ -31,7 +31,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODEL_PATH = os.path.join(BASE_DIR, "models", "rf_model.joblib")
 FEATURES_PATH = os.path.join(BASE_DIR, "models", "feature_columns.joblib")
 SAMPLE_PATH = os.path.join(BASE_DIR, "sample_data", "sample_input.csv")
-OUTPUT_DIR = os.path.join(BASE_DIR, "outputs")
+OUTPUT_DIR = os.path.join(BASE_DIR, "Sample_Output")
 
 TIER_COLORS = {"Normal": "#2ecc71", "Watch": "#f1c40f", "Warning": "#e67e22", "Critical": "#e74c3c"}
 
