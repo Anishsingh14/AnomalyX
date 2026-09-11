@@ -28,11 +28,71 @@ Raw sensor CSV → Rolling-window feature engineering → Random Forest risk sco
 
 ---
 
+## Architecture
+
+```mermaid
+flowchart TD
+    A["Raw Telemetry CSV\ntimestamp, device_id, cpu_temp,\nram_usage, disk_io_errors, vibration_level"] --> B
+
+    subgraph INGEST["Ingestion & Validation — features.py"]
+        B["load_and_clean()\nschema check · type coercion · sort by device + time"]
+    end
+
+    B --> C
+
+    subgraph FEATURE["Feature Engineering — features.py"]
+        C["engineer_features()\nrolling mean / std / max\nrate of change · z-score\ncross-feature ratios"]
+    end
+
+    C --> D{"Trained model\nexists in models/?"}
+    D -- "No (first run)" --> E
+    D -- "Yes" --> G
+
+    subgraph TRAIN["Training — train_model.py"]
+        E["Time-based train/test split"] --> F["Random Forest Classifier\nclass_weight=balanced"]
+        F --> M[("models/rf_model.joblib\nmodels/feature_columns.joblib")]
+    end
+
+    M --> G
+
+    subgraph INFER["Inference & Alerting — predict.py"]
+        G["Risk probability scoring"] --> H["Alert tiering\nNormal / Watch / Warning / Critical"]
+        G --> IMP["Feature importance\n(explains WHY each alert fired)"]
+    end
+
+    H --> O
+    IMP --> O
+
+    subgraph REPORT["Reporting — outputs/"]
+        O["4 charts:\nfleet heatmap · risk timeline\nfeature importance · sensor anomalies"]
+        O2["scored_results.csv"]
+    end
+
+    H --> O2
+```
+
+**How the pieces map to files:**
+
+| Stage | File | Responsibility |
+|---|---|---|
+| Ingestion & Validation | `MAIN/features.py` → `load_and_clean()` | Checks required columns exist, parses timestamps, coerces sensor values to numeric, sorts per device |
+| Feature Engineering | `MAIN/features.py` → `engineer_features()` | Computes rolling-window statistics per device — this is what turns raw noisy readings into a "trend fingerprint" |
+| Training (one-time / on-demand) | `MAIN/train_model.py` | Time-based split → Random Forest fit → evaluation (precision/recall/ROC-AUC/PR-AUC) → saves model artifacts |
+| Inference & Alerting | `MAIN/predict.py` | Loads the saved model, scores new data, assigns alert tiers, pulls feature importances |
+| Reporting | `MAIN/predict.py` → `make_visualizations()` | Renders the 4 charts and the scored CSV into `outputs/` |
+
+**Design decisions worth knowing:**
+- **`features.py` is shared** between `train_model.py` and `predict.py` so the exact same transformations are applied at training time and prediction time — the most common source of silent bugs in ML pipelines is these two drifting apart.
+- **Time-based train/test split, not random shuffling** — the test set is always chronologically *after* the training set, so the model is never evaluated on data it could have "seen the future" of.
+- **Lazy model training** — `predict.py` checks if `models/rf_model.joblib` exists; if not, it trains one automatically before analyzing your file, so there's no separate setup step required.
+
+---
+
 ## Project Structure
 
 ```
 AnomalyX/
-├── src/
+├── MAIN/
 │   ├── features.py        # shared feature-engineering logic (used by both scripts below)
 │   ├── train_model.py     # trains the Random Forest on the synthetic dataset
 │   └── predict.py         # ⭐ MAIN EXECUTABLE — interactive analysis entry point
@@ -68,7 +128,7 @@ pip install -r requirements.txt
 Just run the main script — it will prompt you for a file:
 
 ```bash
-python src/predict.py
+python MAIN/predict.py
 ```
 
 ```
@@ -91,7 +151,7 @@ The first time you run it, there's no trained model yet — the script automatic
 ### 3. (Optional) Retrain the model manually
 
 ```bash
-python src/train_model.py
+python MAIN/train_model.py
 ```
 
 ### 4. Run the test suite
