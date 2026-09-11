@@ -63,7 +63,7 @@ flowchart TD
     H --> O
     IMP --> O
 
-    subgraph REPORT["Reporting — outputs/"]
+    subgraph REPORT["Reporting — Sample_Output/"]
         O["4 charts:\nfleet heatmap · risk timeline\nfeature importance · sensor anomalies"]
         O2["scored_results.csv"]
     end
@@ -79,7 +79,7 @@ flowchart TD
 | Feature Engineering | `MAIN/features.py` → `engineer_features()` | Computes rolling-window statistics per device — this is what turns raw noisy readings into a "trend fingerprint" |
 | Training (one-time / on-demand) | `MAIN/train_model.py` | Time-based split → Random Forest fit → evaluation (precision/recall/ROC-AUC/PR-AUC) → saves model artifacts |
 | Inference & Alerting | `MAIN/predict.py` | Loads the saved model, scores new data, assigns alert tiers, pulls feature importances |
-| Reporting | `MAIN/predict.py` → `make_visualizations()` | Renders the 4 charts and the scored CSV into `outputs/` |
+| Reporting | `MAIN/predict.py` → `make_visualizations()` | Renders the 4 charts and the scored CSV into `Sample_Output/` |
 
 **Design decisions worth knowing:**
 - **`features.py` is shared** between `train_model.py` and `predict.py` so the exact same transformations are applied at training time and prediction time — the most common source of silent bugs in ML pipelines is these two drifting apart.
@@ -101,7 +101,7 @@ AnomalyX/
 ├── sample_data/
 │   └── sample_input.csv   # small sample file for quick testing
 ├── models/                # trained model artifacts get saved here (auto-created)
-├── outputs/                # generated charts + scored results get saved here (auto-created)
+├── Sample_Output/          # generated charts + scored results get saved here (auto-created)
 ├── tests/
 │   └── test_features.py   # pytest unit tests
 ├── .github/workflows/
@@ -201,7 +201,7 @@ Running `predict.py` on the bundled sample produces a terminal summary like this
 -----------------------------------------------------------------
 ```
 
-...and saves 4 charts + a scored CSV to `outputs/`:
+...and saves 4 charts + a scored CSV to `Sample_Output/`:
 
 | Chart | What it shows |
 |---|---|
