@@ -2,7 +2,7 @@
 Run this once before running predict.py:
     python src/train_model.py
 Trains the Random Forest downtime-risk classifier on the synthetic telemetry
-dataset (data/synthetic_telemetry_dataset.csv) and saves the trained model
+dataset (data/synthetic_telemetry_dataset.csv) over saving the trained model
 + feature list to the models/ folder for predict.py to use later.
 """
 
