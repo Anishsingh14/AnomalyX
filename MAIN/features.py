@@ -1,7 +1,12 @@
 """
+features.py
+-----------
+Shared feature-engineering logic for the AnomalyX project.
+
 This module is imported by BOTH train_model.py and predict.py so that the
 exact same transformations are applied at training time and at inference
-time.
+time. Keeping this logic in one place avoids the #1 cause of bugs in ML
+pipelines: train/serve feature mismatch.
 """
 
 import pandas as pd
@@ -13,6 +18,10 @@ REQUIRED_RAW_COLUMNS = [
 ]
 
 SENSOR_COLUMNS = ["cpu_temp", "ram_usage", "disk_io_errors", "vibration_level"]
+
+# Single source of truth for alert-tier boundaries. Used by risk_tier() below
+# AND by predict.py's chart-band code, so the two never drift out of sync.
+RISK_THRESHOLDS = {"watch": 0.30, "warning": 0.60, "critical": 0.85}
 
 # Rolling window size, expressed in number of samples.
 # Our data is sampled every 5 minutes, so 12 samples = 1 hour.
@@ -105,11 +114,11 @@ def get_feature_columns(df: pd.DataFrame) -> list:
 
 def risk_tier(prob: float) -> str:
     """Convert a predicted probability into a human-readable alert tier."""
-    if prob < 0.30:
+    if prob < RISK_THRESHOLDS["watch"]:
         return "Normal"
-    elif prob < 0.60:
+    elif prob < RISK_THRESHOLDS["warning"]:
         return "Watch"
-    elif prob < 0.85:
+    elif prob < RISK_THRESHOLDS["critical"]:
         return "Warning"
     else:
         return "Critical"
