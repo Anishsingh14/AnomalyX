@@ -1,9 +1,12 @@
 """
-Run this once before running predict.py:
-    python src/train_model.py
+train_model.py — AnomalyX
+---------------------------
 Trains the Random Forest downtime-risk classifier on the synthetic telemetry
-dataset (data/synthetic_telemetry_dataset.csv) over saving the trained model
+dataset (synthetic_telemetry_dataset.csv) and saves the trained model
 + feature list to the models/ folder for predict.py to use later.
+
+Run this once before running predict.py:
+    python MAIN/train_model.py
 """
 
 import os
@@ -20,7 +23,7 @@ from sklearn.metrics import (
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from features import engineer_features, get_feature_columns, load_and_clean
 
-DATA_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "synthetic_telemetry_dataset.csv")
+DATA_PATH = os.path.join(os.path.dirname(__file__), "..", "synthetic_telemetry_dataset.csv")
 MODEL_DIR = os.path.join(os.path.dirname(__file__), "..", "models")
 MODEL_PATH = os.path.join(MODEL_DIR, "rf_model.joblib")
 FEATURES_PATH = os.path.join(MODEL_DIR, "feature_columns.joblib")
@@ -103,7 +106,7 @@ def main():
     joblib.dump(feature_cols, FEATURES_PATH)
     print(f"\nModel saved to:    {MODEL_PATH}")
     print(f"Feature list saved to: {FEATURES_PATH}")
-    print("\nDone. You can now run: python src/predict.py")
+    print("\nDone. You can now run: python MAIN/predict.py")
 
 
 if __name__ == "__main__":
