@@ -1,6 +1,14 @@
 """
+predict.py — AnomalyX
+----------------------
+MAIN EXECUTABLE. Run this file directly from any terminal or IDE:
+
+    python MAIN/predict.py
+
 It will interactively ask you for the path to a telemetry CSV file,
-analyze it using the trained Random Forest model.
+analyze it using the trained Random Forest model, print a risk summary
+to the terminal, and save 4 visualization charts to the Sample_Outputs/ folder.
+
 If no trained model is found in models/, it will automatically train one
 first using the bundled synthetic dataset.
 """
@@ -17,18 +25,20 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from features import engineer_features, get_feature_columns, load_and_clean, risk_tier
+from features import engineer_features, get_feature_columns, load_and_clean, risk_tier, RISK_THRESHOLDS
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODEL_PATH = os.path.join(BASE_DIR, "models", "rf_model.joblib")
 FEATURES_PATH = os.path.join(BASE_DIR, "models", "feature_columns.joblib")
-SAMPLE_PATH = os.path.join(BASE_DIR, "sample_data", "sample_input.csv")
-OUTPUT_DIR = os.path.join(BASE_DIR, "Sample_Output")
+SAMPLE_PATH = os.path.join(BASE_DIR, "sample_input.csv")
+OUTPUT_DIR = os.path.join(BASE_DIR, "Sample_Outputs")
 
 TIER_COLORS = {"Normal": "#2ecc71", "Watch": "#f1c40f", "Warning": "#e67e22", "Critical": "#e74c3c"}
 
-# Interactive input prompt
 
+# --------------------------------------------------------------------------
+# STEP 0: Interactive input prompt
+# --------------------------------------------------------------------------
 def prompt_for_input_file() -> str:
     """Ask the user to provide/upload a CSV file path. Retries on bad input."""
     print("=" * 65)
@@ -59,9 +69,9 @@ def prompt_for_input_file() -> str:
         return user_path
 
 
-
-# Ensure a trained model exists
-
+# --------------------------------------------------------------------------
+# STEP 1: Ensure a trained model exists
+# --------------------------------------------------------------------------
 def ensure_model_exists():
     if os.path.exists(MODEL_PATH) and os.path.exists(FEATURES_PATH):
         return
@@ -71,8 +81,9 @@ def ensure_model_exists():
     train_model.main()
 
 
-# Run inference
-
+# --------------------------------------------------------------------------
+# STEP 2: Run inference
+# --------------------------------------------------------------------------
 def run_inference(input_path: str):
     print(f"\n[Step 1/4] Loading and validating input file: {input_path}")
     raw_df = load_and_clean(input_path)
@@ -102,8 +113,9 @@ def run_inference(input_path: str):
     return feat_df, clf, feature_cols
 
 
-# Print a human-readable summary to the terminal
-
+# --------------------------------------------------------------------------
+# STEP 3: Print a human-readable summary to the terminal
+# --------------------------------------------------------------------------
 def print_summary(feat_df: pd.DataFrame):
     print("\n[Step 4/4] Analysis Summary")
     print("-" * 65)
@@ -132,14 +144,14 @@ def print_summary(feat_df: pd.DataFrame):
     print("-" * 65)
 
 
-
-# Visualizations (4 charts, saved as PNG files)
-
+# --------------------------------------------------------------------------
+# STEP 4: Visualizations (4 charts, saved as PNG files)
+# --------------------------------------------------------------------------
 def make_visualizations(feat_df: pd.DataFrame, clf, feature_cols: list):
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     saved = []
 
-    # Fleet-wide risk heatmap (devices x time)
+    # ---- Chart 1: Fleet-wide risk heatmap (devices x time) ----
     try:
         pivot_df = feat_df.copy()
         pivot_df["time_bucket"] = pivot_df["timestamp"].dt.floor("1h")
@@ -167,17 +179,17 @@ def make_visualizations(feat_df: pd.DataFrame, clf, feature_cols: list):
     except Exception as e:
         print(f"  (skipped fleet heatmap: {e})")
 
-    # Risk timeline for the highest-risk device
+    # ---- Chart 2: Risk timeline for the highest-risk device ----
     try:
         riskiest_device = feat_df.groupby("device_id")["risk_probability"].mean().idxmax()
         dev_df = feat_df[feat_df["device_id"] == riskiest_device].sort_values("timestamp")
 
         fig, ax = plt.subplots(figsize=(14, 5))
         ax.plot(dev_df["timestamp"], dev_df["risk_probability"], color="#34495e", linewidth=1.2)
-        ax.axhspan(0.85, 1.0, color=TIER_COLORS["Critical"], alpha=0.15, label="Critical")
-        ax.axhspan(0.60, 0.85, color=TIER_COLORS["Warning"], alpha=0.15, label="Warning")
-        ax.axhspan(0.30, 0.60, color=TIER_COLORS["Watch"], alpha=0.15, label="Watch")
-        ax.axhspan(0.0, 0.30, color=TIER_COLORS["Normal"], alpha=0.15, label="Normal")
+        ax.axhspan(RISK_THRESHOLDS["critical"], 1.0, color=TIER_COLORS["Critical"], alpha=0.15, label="Critical")
+        ax.axhspan(RISK_THRESHOLDS["warning"], RISK_THRESHOLDS["critical"], color=TIER_COLORS["Warning"], alpha=0.15, label="Warning")
+        ax.axhspan(RISK_THRESHOLDS["watch"], RISK_THRESHOLDS["warning"], color=TIER_COLORS["Watch"], alpha=0.15, label="Watch")
+        ax.axhspan(0.0, RISK_THRESHOLDS["watch"], color=TIER_COLORS["Normal"], alpha=0.15, label="Normal")
         ax.set_ylim(0, 1)
         ax.set_title(f"Downtime Risk Timeline — {riskiest_device} (highest average risk)")
         ax.set_xlabel("Time")
@@ -193,7 +205,7 @@ def make_visualizations(feat_df: pd.DataFrame, clf, feature_cols: list):
     except Exception as e:
         print(f"  (skipped risk timeline: {e})")
 
-    # Feature importance (top contributors driving predictions)
+    # ---- Chart 3: Feature importance (top contributors driving predictions) ----
     try:
         importances = pd.Series(clf.feature_importances_, index=feature_cols).sort_values(ascending=True)
         top_n = importances.tail(15)
@@ -209,7 +221,7 @@ def make_visualizations(feat_df: pd.DataFrame, clf, feature_cols: list):
     except Exception as e:
         print(f"  (skipped feature importance chart: {e})")
 
-    # Sensor trend with rolling band + flagged anomalies
+    # ---- Chart 4: Sensor trend with rolling band + flagged anomalies ----
     try:
         dev_df = feat_df[feat_df["device_id"] == riskiest_device].sort_values("timestamp")
         fig, ax = plt.subplots(figsize=(14, 5))
