@@ -63,7 +63,7 @@ flowchart TD
     H --> O
     IMP --> O
 
-    subgraph REPORT["Reporting — Sample_Output/"]
+    subgraph REPORT["Reporting — Sample_Outputs/"]
         O["4 charts:\nfleet heatmap · risk timeline\nfeature importance · sensor anomalies"]
         O2["scored_results.csv"]
     end
@@ -79,7 +79,7 @@ flowchart TD
 | Feature Engineering | `MAIN/features.py` → `engineer_features()` | Computes rolling-window statistics per device — this is what turns raw noisy readings into a "trend fingerprint" |
 | Training (one-time / on-demand) | `MAIN/train_model.py` | Time-based split → Random Forest fit → evaluation (precision/recall/ROC-AUC/PR-AUC) → saves model artifacts |
 | Inference & Alerting | `MAIN/predict.py` | Loads the saved model, scores new data, assigns alert tiers, pulls feature importances |
-| Reporting | `MAIN/predict.py` → `make_visualizations()` | Renders the 4 charts and the scored CSV into `Sample_Output/` |
+| Reporting | `MAIN/predict.py` → `make_visualizations()` | Renders the 4 charts and the scored CSV into `Sample_Outputs/` |
 
 **Design decisions worth knowing:**
 - **`features.py` is shared** between `train_model.py` and `predict.py` so the exact same transformations are applied at training time and prediction time — the most common source of silent bugs in ML pipelines is these two drifting apart.
@@ -96,17 +96,15 @@ AnomalyX/
 │   ├── features.py        # shared feature-engineering logic (used by both scripts below)
 │   ├── train_model.py     # trains the Random Forest on the synthetic dataset
 │   └── predict.py         # ⭐ MAIN EXECUTABLE — interactive analysis entry point
-├── data/
-│   └── synthetic_telemetry_dataset.csv   # bundled training dataset (10 devices, 30 days)
-├── sample_data/
-│   └── sample_input.csv   # small sample file for quick testing
-├── models/                # trained model artifacts get saved here (auto-created)
-├── Sample_Output/          # generated charts + scored results get saved here (auto-created)
-├── tests/
-│   └── test_features.py   # pytest unit tests
+├── synthetic_telemetry_dataset.csv   # bundled training dataset (10 devices, 30 days)
+├── sample_input.csv        # small sample file for quick testing
+├── models/                 # trained model artifacts get saved here (auto-created)
+├── Sample_Outputs/          # generated charts + scored results get saved here (auto-created)
+├── test_features.py        # pytest unit tests (repo root)
 ├── .github/workflows/
 │   └── ci.yml              # GitHub Actions CI pipeline
 ├── requirements.txt
+├── requirements-lock.txt   # pinned versions for exact metric reproducibility
 ├── LICENSE
 └── README.md
 ```
@@ -122,6 +120,11 @@ git clone https://github.com/<your-username>/AnomalyX.git
 cd AnomalyX
 pip install -r requirements.txt
 ```
+
+> **Want to reproduce the exact metrics quoted in this README** (PR-AUC 0.98, ROC-AUC 0.999, etc.)? `requirements.txt` only sets minimum versions, so results can drift as libraries update. Install `requirements-lock.txt` instead for the exact pinned versions this project was verified against:
+> ```bash
+> pip install -r requirements-lock.txt
+> ```
 
 ### 2. Run the analysis (interactive)
 
@@ -140,7 +143,7 @@ python MAIN/predict.py
 Required columns: timestamp, device_id, cpu_temp, ram_usage,
                   disk_io_errors, vibration_level
 
-Enter the path to your telemetry CSV file [press Enter to use bundled sample: sample_data/sample_input.csv]:
+Enter the path to your telemetry CSV file [press Enter to use bundled sample: sample_input.csv]:
 ```
 
 - Press **Enter** to instantly analyze the bundled sample file, **or**
@@ -201,7 +204,7 @@ Running `predict.py` on the bundled sample produces a terminal summary like this
 -----------------------------------------------------------------
 ```
 
-...and saves 4 charts + a scored CSV to `Sample_Output/`:
+...and saves 4 charts + a scored CSV to `Sample_Outputs/`:
 
 | Chart | What it shows |
 |---|---|
