@@ -1,12 +1,9 @@
 """
-train_model.py — AnomalyX
----------------------------
 Trains the Random Forest downtime-risk classifier on the synthetic telemetry
 dataset (synthetic_telemetry_dataset.csv) and saves the trained model
-+ feature list to the models/ folder for predict.py to use later.
++ feature list for predict.py to use later.
 
-Run this once before running predict.py:
-    python MAIN/train_model.py
+Run this once before running predict.py
 """
 
 import os
