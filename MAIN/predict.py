@@ -32,9 +32,8 @@ OUTPUT_DIR = os.path.join(BASE_DIR, "Sample_Outputs")
 TIER_COLORS = {"Normal": "#2ecc71", "Watch": "#f1c40f", "Warning": "#e67e22", "Critical": "#e74c3c"}
 
 
-# --------------------------------------------------------------------------
-# STEP 0: Interactive input prompt
-# --------------------------------------------------------------------------
+# Interactive input prompt
+
 def prompt_for_input_file() -> str:
     """Ask the user to provide/upload a CSV file path. Retries on bad input."""
     print("=" * 65)
@@ -65,9 +64,8 @@ def prompt_for_input_file() -> str:
         return user_path
 
 
-# --------------------------------------------------------------------------
-# STEP 1: Ensure a trained model exists
-# --------------------------------------------------------------------------
+# Ensure a trained model exists
+
 def ensure_model_exists():
     if os.path.exists(MODEL_PATH) and os.path.exists(FEATURES_PATH):
         return
@@ -77,9 +75,8 @@ def ensure_model_exists():
     train_model.main()
 
 
-# --------------------------------------------------------------------------
-# STEP 2: Run inference
-# --------------------------------------------------------------------------
+# Run the inference 
+
 def run_inference(input_path: str):
     print(f"\n[Step 1/4] Loading and validating input file: {input_path}")
     raw_df = load_and_clean(input_path)
@@ -109,9 +106,8 @@ def run_inference(input_path: str):
     return feat_df, clf, feature_cols
 
 
-# --------------------------------------------------------------------------
-# STEP 3: Print a human-readable summary to the terminal
-# --------------------------------------------------------------------------
+# Output generation
+
 def print_summary(feat_df: pd.DataFrame):
     print("\n[Step 4/4] Analysis Summary")
     print("-" * 65)
@@ -140,14 +136,14 @@ def print_summary(feat_df: pd.DataFrame):
     print("-" * 65)
 
 
-# --------------------------------------------------------------------------
-# STEP 4: Visualizations (4 charts, saved as PNG files)
-# --------------------------------------------------------------------------
+
+# Visualizations
+
 def make_visualizations(feat_df: pd.DataFrame, clf, feature_cols: list):
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     saved = []
 
-    # ---- Chart 1: Fleet-wide risk heatmap (devices x time) ----
+    # Fleet-wide risk heatmap
     try:
         pivot_df = feat_df.copy()
         pivot_df["time_bucket"] = pivot_df["timestamp"].dt.floor("1h")
@@ -175,7 +171,7 @@ def make_visualizations(feat_df: pd.DataFrame, clf, feature_cols: list):
     except Exception as e:
         print(f"  (skipped fleet heatmap: {e})")
 
-    # ---- Chart 2: Risk timeline for the highest-risk device ----
+    # Risk timeline for the highest-risk device
     try:
         riskiest_device = feat_df.groupby("device_id")["risk_probability"].mean().idxmax()
         dev_df = feat_df[feat_df["device_id"] == riskiest_device].sort_values("timestamp")
@@ -201,7 +197,7 @@ def make_visualizations(feat_df: pd.DataFrame, clf, feature_cols: list):
     except Exception as e:
         print(f"  (skipped risk timeline: {e})")
 
-    # ---- Chart 3: Feature importance (top contributors driving predictions) ----
+    # Feature importance (top contributors driving predictions)
     try:
         importances = pd.Series(clf.feature_importances_, index=feature_cols).sort_values(ascending=True)
         top_n = importances.tail(15)
@@ -217,7 +213,7 @@ def make_visualizations(feat_df: pd.DataFrame, clf, feature_cols: list):
     except Exception as e:
         print(f"  (skipped feature importance chart: {e})")
 
-    # ---- Chart 4: Sensor trend with rolling band + flagged anomalies ----
+    # Sensor trend with rolling band + flagged anomalies
     try:
         dev_df = feat_df[feat_df["device_id"] == riskiest_device].sort_values("timestamp")
         fig, ax = plt.subplots(figsize=(14, 5))
@@ -257,7 +253,7 @@ def main():
     print("\nGenerating visualizations ...")
     saved_charts = make_visualizations(feat_df, clf, feature_cols)
 
-    # also save the full scored dataset as CSV for further analysis
+    # full scored dataset as CSV for further analysis
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     scored_path = os.path.join(OUTPUT_DIR, "scored_results.csv")
     feat_df[["timestamp", "device_id", "risk_probability", "risk_tier"]].to_csv(scored_path, index=False)
