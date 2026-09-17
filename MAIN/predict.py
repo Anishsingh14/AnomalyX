@@ -1,15 +1,11 @@
 """
-predict.py — AnomalyX
-----------------------
-MAIN EXECUTABLE. Run this file directly from any terminal or IDE:
-
-    python MAIN/predict.py
+Run this file directly from any terminal or IDE:
 
 It will interactively ask you for the path to a telemetry CSV file,
 analyze it using the trained Random Forest model, print a risk summary
-to the terminal, and save 4 visualization charts to the Sample_Outputs/ folder.
+to the terminal and will save all the visualization charts.
 
-If no trained model is found in models/, it will automatically train one
+If no trained model is found, it will automatically train one
 first using the bundled synthetic dataset.
 """
 
