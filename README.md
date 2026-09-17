@@ -1,4 +1,4 @@
-# AnomalyX
+<h1 align="center">AnomalyX</h1>
 
 ### Predictive Equipment Maintenance & Anomaly Alert System
 
