@@ -1,12 +1,7 @@
 """
-features.py
------------
-Shared feature-engineering logic for the AnomalyX project.
-
-This module is imported by BOTH train_model.py and predict.py so that the
+This module is imported by both train_model.py and predict.py so that the
 exact same transformations are applied at training time and at inference
-time. Keeping this logic in one place avoids the #1 cause of bugs in ML
-pipelines: train/serve feature mismatch.
+time. Keeping this logic in one place avoids bugs.
 """
 
 import pandas as pd
