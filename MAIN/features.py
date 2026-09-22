@@ -1,8 +1,4 @@
-"""
-This module is imported by both train_model.py and predict.py so that the
-exact same transformations are applied at training time and at inference
-time. Keeping this logic in one place avoids bugs.
-"""
+
 
 import pandas as pd
 import numpy as np
