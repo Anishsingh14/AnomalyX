@@ -1,10 +1,4 @@
-"""
-Trains the Random Forest downtime-risk classifier on the synthetic telemetry
-dataset (synthetic_telemetry_dataset.csv) and saves the trained model
-+ feature list for predict.py to use later.
 
-Run this once before running predict.py
-"""
 
 import os
 import sys
