@@ -1,3 +1,10 @@
+"""
+This module is imported by BOTH train_model.py and predict.py so that the
+exact same transformations are applied at training time and at inference
+time. Keeping this logic in one place avoids the cause of bugs in ML
+pipelines.
+"""
+
 import pandas as pd
 import numpy as np
 
