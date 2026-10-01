@@ -6,7 +6,7 @@ analyze it using the trained Random Forest model, print a risk summary
 to the terminal and will save all the visualization charts.
 
 If no trained model is found, it will automatically train one
-first using the bundled synthetic dataset.
+first using the bundled synthetic dataset purposefully.
 """
 
 import os
