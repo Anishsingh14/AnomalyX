@@ -1,6 +1,6 @@
 """
-This module is imported by BOTH train_model.py as well as predict.py so that the
-exact same transformations are applied at training time and at inference
+This module is imported by both train_model.py as well as the predict.py so that, the
+exact same transformations are applied at training time and at the inference
 time also. Keeping this logic in one place avoids the cause of bugs in the ML
 pipelines respectively.
 """
